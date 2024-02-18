@@ -6,25 +6,57 @@ import db
 import pydeck as pdk
 from pydeck.types import String
 
-games = get_matches_today(7)
+districts = {
+    'Blekinge': 2,
+    'Dalsland': 3,
+    'Göteborg': 7,
+    'Jämtland/Härjedalen': 10,
+    'Skåne': 14,
+    'Södermanland': 17,
+    'Västerbotten': 20,
+    'Ångermanland': 23,
+    'Bohuslän': 25,
+    'Gestrikland': 6,
+    'Halland': 8,
+    'Medelpad': 11,
+    'Småland': 15,
+    'Uppland': 18,
+    'Västergötland': 21,
+    'Örebro län': 13,
+    'Gotland': 5,
+    'Hälsingland': 9,
+    'Norrbotten': 12,
+    'Stockholm': 16,
+    'Västmanland': 22,
+    'Östergötland': 24
+}
+
+st.header("Matcher idag")
+
+
+option = st.selectbox('Välj district', districts.keys())
+
+games = get_matches_today(districts[option])
 locations = list(set([g["location"] for g in games]))
 cords = db.get_cords(locations)
 
-df = pd.DataFrame.from_dict(cords, orient="index").reset_index()
-df = df.rename(columns={"index": "location"})
-
-df = pd.merge(df, pd.DataFrame(games).reset_index(), on="location", how="left")
-
+df = pd.DataFrame(games).reset_index()
+df = db.enrich_games_with_cords(df)
+df_errors = df[pd.isnull(df['latitude']) | pd.isnull(df['longitude']) | (df['longitude'] == df['latitude'])] 
+df = df.dropna(subset=['latitude', 'longitude'])
 print(df)
+
+avg_lat = df['latitude'].mean()
+avg_long = df['longitude'].mean()
 
 
 st.pydeck_chart(
     pdk.Deck(
         map_style=None,
         initial_view_state=pdk.ViewState(
-            latitude=57.708870,
-            longitude=11.9745600,
-            zoom=11,
+            latitude=avg_lat,
+            longitude=avg_long,
+            zoom=8,
         ),
         layers=[
             pdk.Layer(
@@ -37,14 +69,18 @@ st.pydeck_chart(
                 opacity=0.8,
                 stroked=True,
                 filled=True,
-                radius_scale=2,
-                radius_min_pixels=1,
-                radius_max_pixels=100,
-                line_width_min_pixels=1,
+                radius_scale=8,
+                radius_min_pixels=4,
+                radius_max_pixels=10,
             ),
         ],
         tooltip={
             "text": "{home} - {away} \n {location} \n {competition} \n {timestamp}"
         },
-    )
+    ),
+    use_container_width=True
 )
+
+st.text('Matcher med okänd plats')
+
+st.dataframe(df_errors)
