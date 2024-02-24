@@ -7,34 +7,33 @@ import pydeck as pdk
 from pydeck.types import String
 
 districts = {
-    'Blekinge': 2,
-    'Dalsland': 3,
-    'Göteborg': 7,
-    'Jämtland/Härjedalen': 10,
-    'Skåne': 14,
-    'Södermanland': 17,
-    'Västerbotten': 20,
-    'Ångermanland': 23,
-    'Bohuslän': 25,
-    'Gestrikland': 6,
-    'Halland': 8,
-    'Medelpad': 11,
-    'Småland': 15,
-    'Uppland': 18,
-    'Västergötland': 21,
-    'Örebro län': 13,
-    'Gotland': 5,
-    'Hälsingland': 9,
-    'Norrbotten': 12,
-    'Stockholm': 16,
-    'Västmanland': 22,
-    'Östergötland': 24
+    "Blekinge": 2,
+    "Dalsland": 3,
+    "Göteborg": 7,
+    "Jämtland/Härjedalen": 10,
+    "Skåne": 14,
+    "Södermanland": 17,
+    "Västerbotten": 20,
+    "Ångermanland": 23,
+    "Bohuslän": 25,
+    "Gestrikland": 6,
+    "Halland": 8,
+    "Medelpad": 11,
+    "Småland": 15,
+    "Uppland": 18,
+    "Västergötland": 21,
+    "Örebro län": 13,
+    "Gotland": 5,
+    "Hälsingland": 9,
+    "Norrbotten": 12,
+    "Stockholm": 16,
+    "Västmanland": 22,
+    "Östergötland": 24,
 }
 
-st.header("Matcher idag")
+st.header("Matcher idag runt om i Sverige")
 
-
-option = st.selectbox('Välj district', districts.keys())
+option = st.selectbox("Välj district", districts.keys())
 
 games = get_matches_today(districts[option])
 locations = list(set([g["location"] for g in games]))
@@ -42,13 +41,21 @@ cords = db.get_cords(locations)
 
 df = pd.DataFrame(games).reset_index()
 df = db.enrich_games_with_cords(df)
-df_errors = df[pd.isnull(df['latitude']) | pd.isnull(df['longitude']) | (df['longitude'] == df['latitude'])] 
-df = df.dropna(subset=['latitude', 'longitude'])
-print(df)
 
-avg_lat = df['latitude'].mean()
-avg_long = df['longitude'].mean()
+df_errors = df[
+    (df["longitude"].isna())
+    | (df["latitude"].isna())
+    | (df["longitude"] == 0.0)
+    | (df["latitude"] == 0.0)
+]
+df = df.drop(df_errors.index)
 
+st.dataframe(df)
+st.dataframe(df_errors)
+
+# Create map
+avg_lat = df["latitude"].mean()
+avg_long = df["longitude"].mean()
 
 st.pydeck_chart(
     pdk.Deck(
@@ -56,7 +63,7 @@ st.pydeck_chart(
         initial_view_state=pdk.ViewState(
             latitude=avg_lat,
             longitude=avg_long,
-            zoom=8,
+            zoom=6,
         ),
         layers=[
             pdk.Layer(
@@ -78,9 +85,5 @@ st.pydeck_chart(
             "text": "{home} - {away} \n {location} \n {competition} \n {timestamp}"
         },
     ),
-    use_container_width=True
+    use_container_width=True,
 )
-
-st.text('Matcher med okänd plats')
-
-st.dataframe(df_errors)
