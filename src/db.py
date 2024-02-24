@@ -1,8 +1,7 @@
 import sqlite3
 import os
 import pandas as pd
-
-DATABASE_PATH = os.path.join("data/db.db")
+from sqlite_s3_query import sqlite_s3_query
 
 
 def enrich_games_with_cords(games_df: pd.DataFrame) -> pd.DataFrame:
@@ -21,29 +20,22 @@ def enrich_games_with_cords(games_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_cords(locations: list[str]):
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
+    with sqlite_s3_query(
+        url="https://matcher-idag-locations.s3.eu-central-1.amazonaws.com/db.db"
+    ) as query:
+        params = tuple(locations)
+        with query(
+            f"SELECT name, latitude, longitude FROM locations WHERE name IN {params}"
+        ) as (columns, rows):
+            result = {}
+            for row in rows:
+                name, latitude, longitude = row
+                if latitude is not None and longitude is not None:
+                    result[name] = {
+                        "latitude": float(latitude),
+                        "longitude": float(longitude),
+                    }
+                else:
+                    result[name] = {"latitude": float(0), "longitude": float(0)}
 
-    cursor.execute(
-        """
-        SELECT name, latitude, longitude FROM locations
-        WHERE name IN ({})
-    """.format(
-            ",".join(["?"] * len(locations))
-        ),
-        locations,
-    )
-
-    rows = cursor.fetchall()
-
-    result = {}
-    for row in rows:
-        name, latitude, longitude = row
-        if latitude is not None and longitude is not None:
-            result[name] = {"latitude": float(latitude), "longitude": float(longitude)}
-        else:
-            result[name] = {"latitude": float(0), "longitude": float(0)}
-
-    conn.close()
-
-    return result
+            return result
