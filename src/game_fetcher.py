@@ -3,7 +3,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 
 
-def get_matches_today(association_id: int) -> Optional[Dict]:
+def get_matches_today(association_id: int) -> Optional[List[Dict]]:
     api_url = "/api/matches-today/games/"
     todays_date = get_formatted_date()
     proxy_url = "https://www.gbgfotboll.se"
@@ -25,38 +25,39 @@ def get_matches_today(association_id: int) -> Optional[Dict]:
 def get_all_locations(resp: Dict) -> List[str]:
     all_locations = set()
 
-    if resp and resp.get("competitions"):
+    if resp and "competitions" in resp:
         for competition in resp["competitions"]:
-            if competition and competition.get("games"):
+            if competition and "games" in competition:
                 for game in competition["games"]:
-                    if game and game.get("location"):
+                    if game and "location" in game:
                         all_locations.add(game["location"])
 
     return list(all_locations)
 
 
-def parse(resp: Dict) -> List[str]:
+def parse(resp: Dict) -> List[Dict]:
     parsed_games = []
-    for comp in resp["competitions"]:
-        games = comp["games"]
-        for game in games:
-            model = {}
-            model["competition"] = comp["name"]
-            model["home"] = game["homeTeam"]["name"]
-            model["away"] = game["awayTeam"]["name"]
-            model["location"] = game["location"]
-            model["timestamp"] = game["date"]
-        parsed_games.append(model)
+    for comp in resp.get("competitions", []):
+        for game in comp.get("games", []):
+            model = {
+                "competition": comp.get("name", ""),
+                "home": game["homeTeam"]["name"],
+                "away": game["awayTeam"]["name"],
+                "location": game.get("location", ""),
+                "timestamp": game.get("date", ""),
+            }
+            parsed_games.append(model)
 
     return parsed_games
 
 
 def get_formatted_date() -> str:
     date = datetime.now()
-    year = pad_number(date.year)
-    month = pad_number(date.month)
-    day = pad_number(date.day)
-
+    year, month, day = (
+        pad_number(date.year),
+        pad_number(date.month),
+        pad_number(date.day),
+    )
     return f"{year}-{month}-{day}"
 
 
