@@ -117,7 +117,7 @@ def create_map(df_aggregated):
 
 def main():
     # Streamlit header
-    st.header("Matcher idag runt om i Sverige")
+    st.header("Matcher idag")
 
     # Dropdown to select district
     option = st.selectbox("Välj district", constants.districts.keys())
