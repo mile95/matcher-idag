@@ -24,20 +24,32 @@ def enrich_game_data_with_coordinates(games_df, cords_df):
 
 def filter_and_display_data(games_df):
     # Identify and drop rows with missing or zero coordinates
-    df_errors = games_df[
-        (games_df["longitude"].isna())
-        | (games_df["latitude"].isna())
-        | (games_df["longitude"] == 0.0)
-        | (games_df["latitude"] == 0.0)
-    ]
+    df_errors = pd.DataFrame()
+    if not "latitude" in games_df.columns or not "longitude" in games_df.columns:
+        df_errors = games_df
+    else:
+        df_errors = games_df[
+            (games_df["longitude"].isna())
+            | (games_df["latitude"].isna())
+            | (games_df["longitude"] == 0.0)
+            | (games_df["latitude"] == 0.0)
+        ]
     games_df = games_df.drop(df_errors.index)
 
     # Display expanders with dataframes
-    with st.expander(f"Matcher med identifierbar plats [{games_df.shape[0]}]"):
-        st.dataframe(games_df)
+    if games_df.shape[0] > 0:
+        with st.expander(f"Matcher med identifierbar plats [{games_df.shape[0]}]"):
+            games_df_display = games_df.drop(columns=["latitude", "longitude", "index"])
+            st.dataframe(games_df_display)
 
-    with st.expander(f"Matcher med icke identifierbar plats [{df_errors.shape[0]}]"):
-        st.dataframe(df_errors)
+    if df_errors.shape[0] > 0:
+        with st.expander(
+            f"Matcher med icke identifierbar plats [{df_errors.shape[0]}]"
+        ):
+            df_errors = df_errors.drop(
+                columns=["latitude", "longitude", "index"], errors="ignore"
+            )
+            st.dataframe(df_errors)
 
     return games_df
 
@@ -125,24 +137,28 @@ def main():
     # Fetch game data
     games = fetch_game_data(option)
 
-    # Fetch location coordinates
-    locations = [game["location"] for game in games]
-    cords_df = fetch_location_coordinates(locations)
+    if len(games) > 0:
+        # Fetch location coordinates
+        locations = [game["location"].strip() for game in games]
+        cords_df = fetch_location_coordinates(locations)
 
-    # Merge game data with location coordinates
-    games_df = enrich_game_data_with_coordinates(pd.DataFrame(games), cords_df)
+        # Merge game data with location coordinates
+        games_df = enrich_game_data_with_coordinates(pd.DataFrame(games), cords_df)
 
-    # Filter and display data
-    games_df = filter_and_display_data(games_df)
+        # Filter and display data
+        games_df = filter_and_display_data(games_df)
 
-    # Format and enrich data
-    games_df = format_and_enrich_data(games_df)
+        if games_df.shape[0] > 0:
+            # Format and enrich data
+            games_df = format_and_enrich_data(games_df)
 
-    # Aggregate location data
-    df_aggregated = aggregate_location_data(games_df)
+            # Aggregate location data
+            df_aggregated = aggregate_location_data(games_df)
 
-    # Create and display the map
-    create_map(df_aggregated)
+            # Create and display the map
+            create_map(df_aggregated)
+    else:
+        st.header("Inga matcher idag!")
 
 
 if __name__ == "__main__":

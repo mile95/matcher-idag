@@ -40,11 +40,11 @@ def parse(resp: Dict) -> List[Dict]:
     for comp in resp.get("competitions", []):
         for game in comp.get("games", []):
             model = {
-                "competition": comp.get("name", ""),
-                "home": game["homeTeam"]["name"],
-                "away": game["awayTeam"]["name"],
-                "location": game.get("location", ""),
-                "timestamp": game.get("date", ""),
+                "competition": comp.get("name", "").strip(),
+                "home": game["homeTeam"]["name"].strip(),
+                "away": game["awayTeam"]["name"].strip(),
+                "location": game.get("location", "").strip(),
+                "timestamp": game.get("date", "").strip(),
             }
             parsed_games.append(model)
 
