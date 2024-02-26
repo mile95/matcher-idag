@@ -22,8 +22,7 @@ def enrich_game_data_with_coordinates(games_df, cords_df):
     return pd.merge(games_df, cords_df, on="location", how="left")
 
 
-def filter_and_display_data(games_df):
-    # Identify and drop rows with missing or zero coordinates
+def filter_data(games_df):
     df_errors = pd.DataFrame()
     if not "latitude" in games_df.columns or not "longitude" in games_df.columns:
         df_errors = games_df
@@ -36,22 +35,23 @@ def filter_and_display_data(games_df):
         ]
     games_df = games_df.drop(df_errors.index)
 
-    # Display expanders with dataframes
+    return games_df, df_errors
+
+
+def display_data_frames(games_df, errors_df):
+    if errors_df.shape[0] > 0:
+        with st.expander(
+            f"Matcher med icke identifierbar plats [{errors_df.shape[0]}]"
+        ):
+            errors_df = errors_df.drop(
+                columns=["latitude", "longitude", "index"], errors="ignore"
+            )
+            st.dataframe(errors_df)
+
     if games_df.shape[0] > 0:
         with st.expander(f"Matcher med identifierbar plats [{games_df.shape[0]}]"):
             games_df_display = games_df.drop(columns=["latitude", "longitude", "index"])
             st.dataframe(games_df_display)
-
-    if df_errors.shape[0] > 0:
-        with st.expander(
-            f"Matcher med icke identifierbar plats [{df_errors.shape[0]}]"
-        ):
-            df_errors = df_errors.drop(
-                columns=["latitude", "longitude", "index"], errors="ignore"
-            )
-            st.dataframe(df_errors)
-
-    return games_df
 
 
 def format_and_enrich_data(games_df):
@@ -135,8 +135,11 @@ def create_map(df_aggregated):
 
 
 def main():
+    # Use full width
+    st.set_page_config(layout="wide")
+
     # Streamlit header
-    st.header("Matcher idag")
+    st.header("Fotbollsmatcher idag")
 
     # Dropdown to select district
     option = st.selectbox("Välj district", constants.districts.keys())
@@ -153,7 +156,7 @@ def main():
         games_df = enrich_game_data_with_coordinates(pd.DataFrame(games), cords_df)
 
         # Filter and display data
-        games_df = filter_and_display_data(games_df)
+        games_df, errors_df = filter_data(games_df)
 
         if games_df.shape[0] > 0:
             # Format and enrich data
@@ -164,6 +167,10 @@ def main():
 
             # Create and display the map
             create_map(df_aggregated)
+
+        # Display dataframes
+        display_data_frames(games_df, errors_df)
+
     else:
         st.header("Inga matcher idag!")
 
