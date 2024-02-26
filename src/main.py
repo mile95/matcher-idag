@@ -96,6 +96,7 @@ def create_map(df_aggregated):
     # Create map
     avg_lat = df_aggregated["latitude"].mean()
     avg_long = df_aggregated["longitude"].mean()
+    print(df_aggregated)
 
     # Configure Pydeck layers
     st.pydeck_chart(
@@ -113,11 +114,11 @@ def create_map(df_aggregated):
                     get_position="[longitude, latitude]",
                     pickable=True,
                     stroked=True,
-                    radius_scale=10,
-                    radius_min_pixels=4,
-                    radius_max_pixels=20,
+                    radius_scale=1,
+                    radius_min_pixels=6,
+                    #radius_max_pixels=20,
                     line_width_min_pixels=1,
-                    get_radius="count",
+                    get_radius="[exits_radius]",
                     get_fill_color=[0, 71, 171],
                 ),
             ],
