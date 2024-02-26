@@ -118,10 +118,17 @@ def create_map(df_aggregated):
                     radius_max_pixels=20,
                     line_width_min_pixels=1,
                     get_radius="count",
-                    get_fill_color=[34, 139, 34],
+                    get_fill_color=[0, 71, 171],
                 ),
             ],
-            tooltip={"text": "{info}"},
+            tooltip={
+                "text": "{info}",
+                "style": {
+                    "backgroundColor": "rgb(25,25,112)",
+                    "color": "white",
+                    "font-size": "x-small",
+                },
+            },
         ),
         use_container_width=True,
     )
