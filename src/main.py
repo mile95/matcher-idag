@@ -117,7 +117,6 @@ def create_map(df_aggregated):
     # Create map
     avg_lat = df_aggregated["latitude"].mean()
     avg_long = df_aggregated["longitude"].mean()
-    print(df_aggregated)
 
     # Configure Pydeck layers
     st.pydeck_chart(
