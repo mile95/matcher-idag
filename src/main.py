@@ -46,11 +46,32 @@ def display_data_frames(games_df, errors_df):
             errors_df = errors_df.drop(
                 columns=["latitude", "longitude", "index"], errors="ignore"
             )
+            errors_df = errors_df.rename(
+                columns={
+                    "competition": "Tävling",
+                    "home": "Hemma",
+                    "away": "Borta",
+                    "location": "Spelplats",
+                    "timestamp": "Tid",
+                }
+            )
+
             st.dataframe(errors_df)
 
     if games_df.shape[0] > 0:
         with st.expander(f"Matcher med identifierbar plats [{games_df.shape[0]}]"):
-            games_df_display = games_df.drop(columns=["latitude", "longitude", "index"])
+            games_df_display = games_df.drop(
+                columns=["latitude", "longitude", "index", "time_formatted", "info"]
+            )
+            games_df_display = games_df_display.rename(
+                columns={
+                    "competition": "Tävling",
+                    "home": "Hemma",
+                    "away": "Borta",
+                    "location": "Spelplats",
+                    "timestamp": "Tid",
+                }
+            )
             st.dataframe(games_df_display)
 
 
@@ -96,6 +117,7 @@ def create_map(df_aggregated):
     # Create map
     avg_lat = df_aggregated["latitude"].mean()
     avg_long = df_aggregated["longitude"].mean()
+    print(df_aggregated)
 
     # Configure Pydeck layers
     st.pydeck_chart(
@@ -117,7 +139,7 @@ def create_map(df_aggregated):
                     radius_min_pixels=6,
                     radius_max_pixels=20,
                     line_width_min_pixels=1,
-                    get_radius="[exits_radius]",
+                    get_radius="exits_radius",
                     get_fill_color=[0, 71, 171],
                 ),
             ],
@@ -126,7 +148,7 @@ def create_map(df_aggregated):
                 "style": {
                     "backgroundColor": "rgb(25,25,112)",
                     "color": "white",
-                    "font-size": "x-small",
+                    "font-size": "small",
                 },
             },
         ),
